@@ -1,0 +1,20 @@
+# sealhouse build of cosign on Red Hat Hardened Images (Hummingbird).
+ARG BUILDER
+ARG RUNTIME
+
+FROM ${BUILDER} AS builder
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY cmd/ cmd/
+COPY pkg/ pkg/
+COPY internal/ internal/
+ARG LDFLAGS=""
+RUN CGO_ENABLED=0 GOFIPS140=v1.26.0 go build -trimpath -ldflags "-buildid= ${LDFLAGS}" \
+      -o /out/usr/local/bin/cosign ./cmd/cosign
+# A CLI: it keeps nothing between runs, and HOME (/tmp in core-runtime) takes
+# its cache, so no writable directories are created here.
+
+FROM ${RUNTIME}
+COPY --from=builder /out/usr/local/bin/cosign /usr/local/bin/cosign
+ENTRYPOINT ["/usr/local/bin/cosign"]
