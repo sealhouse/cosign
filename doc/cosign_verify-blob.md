@@ -4,12 +4,12 @@ Verify a signature on the supplied blob
 
 ### Synopsis
 
-Verify a signature on the supplied blob input using the specified key reference.
-You may specify either a key, a bundle (optionally with trusted root), or a kms reference to verify against.
-	If you use a key, bundle, or trusted root, you must specify the path to them on disk.
+Verify a signature on the supplied blob input using a Sigstore bundle, provided via --bundle (required).
+Verify against a public key or KMS reference (--key), a security key (--sk), or, for keyless
+signatures, a certificate identity and OIDC issuer (--certificate-identity and --certificate-oidc-issuer).
 
-The preferred way to provide verification material is via a Sigstore bundle using --bundle,
-which contains the signature, certificate, and transparency log proof.
+A trusted root verifies service-provided material in the bundle (certificates, transparency log
+entries, and RFC 3161 timestamps). Cosign fetches it from TUF, unless you provide one via --trusted-root.
 The blob may be specified as a path to a file or - for stdin.
 
 ```
@@ -21,8 +21,8 @@ cosign verify-blob [flags]
 ```
  cosign verify-blob --bundle <path> --certificate-identity <identity> --certificate-oidc-issuer <issuer> <blob>
 
-  # Verify a signature with a bundle and trusted root
-  cosign verify-blob --bundle artifact.sigstore.json --trusted-root trusted_root.json <blob>
+  # Verify a keyless signature with a bundle and trusted root
+  cosign verify-blob --bundle artifact.sigstore.json --trusted-root trusted_root.json --certificate-identity foo@example.com --certificate-oidc-issuer https://accounts.google.com <blob>
 
   # Verify a blob (keyless)
   cosign verify-blob --bundle artifact.sigstore.json --certificate-identity foo@example.com --certificate-oidc-issuer https://accounts.google.com <blob>
@@ -53,7 +53,7 @@ cosign verify-blob [flags]
 ### Options
 
 ```
-      --allow-certificate-chain                         allow X.509 certificate chains in bundle verification material for v0.3+ bundles
+      --allow-certificate-chain[=true|false]            allow X.509 certificate chains in bundle verification material for v0.3+ bundles
       --bundle string                                   path to bundle FILE
       --certificate-github-workflow-name string         contains the workflow claim from the GitHub OIDC Identity token that contains the name of the executed workflow.
       --certificate-github-workflow-ref string          contains the ref claim from the GitHub OIDC Identity token that contains the git ref that the workflow run was based upon.
@@ -64,23 +64,23 @@ cosign verify-blob [flags]
       --certificate-identity-regexp string              A regular expression alternative to --certificate-identity. Accepts the Go regular expression syntax described at https://golang.org/s/re2syntax. Either --certificate-identity or --certificate-identity-regexp must be set for keyless flows.
       --certificate-oidc-issuer string                  The OIDC issuer expected in a valid Fulcio certificate, e.g. https://token.actions.githubusercontent.com or https://oauth2.sigstore.dev/auth. Either --certificate-oidc-issuer or --certificate-oidc-issuer-regexp must be set for keyless flows.
       --certificate-oidc-issuer-regexp string           A regular expression alternative to --certificate-oidc-issuer. Accepts the Go regular expression syntax described at https://golang.org/s/re2syntax. Either --certificate-oidc-issuer or --certificate-oidc-issuer-regexp must be set for keyless flows.
-  -h, --help                                            help for verify-blob
-      --insecure-ignore-sct                             when set, verification will not check that a certificate contains an embedded SCT, a proof of inclusion in a certificate transparency log
-      --insecure-ignore-tlog                            ignore transparency log verification, to be used when an artifact signature has not been uploaded to the transparency log. Artifacts cannot be publicly verified when not included in a log
+  -h, --help[=true|false]                               help for verify-blob
+      --insecure-ignore-sct[=true|false]                when set, verification will not check that a certificate contains an embedded SCT, a proof of inclusion in a certificate transparency log
+      --insecure-ignore-tlog[=true|false]               ignore transparency log verification, to be used when an artifact signature has not been uploaded to the transparency log. Artifacts cannot be publicly verified when not included in a log
       --key string                                      path to the public key file, KMS URI or Kubernetes Secret
       --max-workers int                                 the amount of maximum workers for parallel executions (default 10)
-      --sk                                              whether to use a hardware security key
+      --sk[=true|false]                                 whether to use a hardware security key
       --slot string                                     security key slot to use for generated key (default: signature) (authentication|signature|card-authentication|key-management)
       --trusted-root string                             Path to a Sigstore TrustedRoot JSON file
-      --use-signed-timestamps                           verify rfc3161 timestamps
+      --use-signed-timestamps[=true|false]              verify rfc3161 timestamps
 ```
 
 ### Options inherited from parent commands
 
 ```
-      --output-file string   log output to a file
-  -t, --timeout duration     timeout for commands (default 3m0s)
-  -d, --verbose              log debug output
+      --output-file string     log output to a file
+  -t, --timeout duration       timeout for commands (default 3m0s)
+  -d, --verbose[=true|false]   log debug output
 ```
 
 ### SEE ALSO
