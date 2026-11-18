@@ -1002,12 +1002,10 @@ func TestSignAttestVerifyContainerWithSigningConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 	attestCmd := attest.AttestCommand{
-		KeyOpts:        ko,
-		PredicatePath:  predicatePath,
-		PredicateType:  "slsaprovenance",
-		Timeout:        30 * time.Second,
-		RekorEntryType: "dsse",
-		TlogUpload:     true,
+		KeyOpts:       ko,
+		PredicatePath: predicatePath,
+		PredicateType: "slsaprovenance",
+		Timeout:       30 * time.Second,
 	}
 	must(attestCmd.Exec(ctx, imgName), t)
 
@@ -1203,14 +1201,12 @@ func TestSignVerifyContainerWithCertificateChain(t *testing.T) {
 			var verifyErr error
 			if tc.attestation {
 				attestCmd := attest.AttestCommand{
-					KeyOpts:        ko,
-					CertPath:       leafCertPath,
-					CertChainPath:  signChainPath,
-					PredicatePath:  predicatePath,
-					PredicateType:  predicateType,
-					Timeout:        30 * time.Second,
-					RekorEntryType: "dsse",
-					TlogUpload:     false,
+					KeyOpts:       ko,
+					CertPath:      leafCertPath,
+					CertChainPath: signChainPath,
+					PredicatePath: predicatePath,
+					PredicateType: predicateType,
+					Timeout:       30 * time.Second,
 				}
 				must(attestCmd.Exec(ctx, imgName), t)
 
@@ -1538,12 +1534,10 @@ func TestSignAttestVerifyRekorV2(t *testing.T) {
 	ko.BundlePath = filepath.Join(t.TempDir(), "att.bundle")
 	ko.NewBundleFormat = true
 	must((&attest.AttestCommand{
-		KeyOpts:        ko,
-		PredicatePath:  predicatePath,
-		PredicateType:  "slsaprovenance",
-		Timeout:        30 * time.Second,
-		RekorEntryType: "dsse",
-		TlogUpload:     true,
+		KeyOpts:       ko,
+		PredicatePath: predicatePath,
+		PredicateType: "slsaprovenance",
+		Timeout:       30 * time.Second,
 	}).Exec(ctx, imgName), t)
 	assertRekorV2HashedrekordEntry(t, ko.BundlePath)
 
@@ -2156,10 +2150,9 @@ func attestVerify(t *testing.T, predicateType, attestation, goodCue, badCue stri
 			PassFunc:        passFunc,
 			NewBundleFormat: true,
 		},
-		PredicatePath:  attestationPath,
-		PredicateType:  predicateType,
-		Timeout:        30 * time.Second,
-		RekorEntryType: "dsse",
+		PredicatePath: attestationPath,
+		PredicateType: predicateType,
+		Timeout:       30 * time.Second,
 	}
 	must(attestCmd.Exec(ctx, imgName), t)
 
@@ -2250,23 +2243,19 @@ func TestAttestationDownload(t *testing.T) {
 
 	// Attest to create a slsa attestation
 	attestCommand := attest.AttestCommand{
-		KeyOpts:        ko,
-		PredicatePath:  slsaAttestationPath,
-		PredicateType:  "slsaprovenance",
-		Timeout:        30 * time.Second,
-		Replace:        true,
-		RekorEntryType: "dsse",
+		KeyOpts:       ko,
+		PredicatePath: slsaAttestationPath,
+		PredicateType: "slsaprovenance",
+		Timeout:       30 * time.Second,
 	}
 	must(attestCommand.Exec(ctx, imgName), t)
 
 	// Attest to create a vuln attestation
 	attestCommand = attest.AttestCommand{
-		KeyOpts:        ko,
-		PredicatePath:  vulnAttestationPath,
-		PredicateType:  "vuln",
-		Timeout:        30 * time.Second,
-		Replace:        true,
-		RekorEntryType: "dsse",
+		KeyOpts:       ko,
+		PredicatePath: vulnAttestationPath,
+		PredicateType: "vuln",
+		Timeout:       30 * time.Second,
 	}
 	must(attestCommand.Exec(ctx, imgName), t)
 
@@ -2274,12 +2263,12 @@ func TestAttestationDownload(t *testing.T) {
 	attOpts := options.AttestationDownloadOptions{}
 	must(download.AttestationCmd(ctx, regOpts, attOpts, imgName, os.Stdout), t)
 
-	attestations, err := cosign.FetchAttestationsForReference(ctx, ref, attOpts.PredicateType, ociremoteOpts...)
+	bundles, _, err := cosign.GetBundles(ctx, ref, ociremoteOpts)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(attestations) != 2 {
-		t.Fatal(fmt.Errorf("expected len(attestations) == 2, got %d", len(attestations)))
+	if len(bundles) != 2 {
+		t.Fatal(fmt.Errorf("expected len(bundles) == 2, got %d", len(bundles)))
 	}
 }
 
@@ -2349,23 +2338,19 @@ func TestAttestationDownloadWithPredicateType(t *testing.T) {
 
 	// Attest to create a slsa attestation
 	attestCommand := attest.AttestCommand{
-		KeyOpts:        ko,
-		PredicatePath:  slsaAttestationPath,
-		PredicateType:  "slsaprovenance",
-		Timeout:        30 * time.Second,
-		Replace:        true,
-		RekorEntryType: "dsse",
+		KeyOpts:       ko,
+		PredicatePath: slsaAttestationPath,
+		PredicateType: "slsaprovenance",
+		Timeout:       30 * time.Second,
 	}
 	must(attestCommand.Exec(ctx, imgName), t)
 
 	// Attest to create a vuln attestation
 	attestCommand = attest.AttestCommand{
-		KeyOpts:        ko,
-		PredicatePath:  vulnAttestationPath,
-		PredicateType:  "vuln",
-		Timeout:        30 * time.Second,
-		Replace:        true,
-		RekorEntryType: "dsse",
+		KeyOpts:       ko,
+		PredicatePath: vulnAttestationPath,
+		PredicateType: "vuln",
+		Timeout:       30 * time.Second,
 	}
 	must(attestCommand.Exec(ctx, imgName), t)
 
@@ -2376,12 +2361,22 @@ func TestAttestationDownloadWithPredicateType(t *testing.T) {
 	must(download.AttestationCmd(ctx, regOpts, attOpts, imgName, os.Stdout), t)
 
 	predicateType, _ := options.ParsePredicateType(attOpts.PredicateType)
-	attestations, err := cosign.FetchAttestationsForReference(ctx, ref, predicateType, ociremoteOpts...)
+	bundles, _, err := cosign.GetBundles(ctx, ref, ociremoteOpts)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(attestations) != 1 {
-		t.Fatal(fmt.Errorf("expected len(attestations) == 1, got %d", len(attestations)))
+	var matched int
+	for _, b := range bundles {
+		envelope, err := b.Envelope()
+		if err == nil && envelope != nil {
+			statement, err := envelope.Statement()
+			if err == nil && statement != nil && statement.PredicateType == predicateType {
+				matched++
+			}
+		}
+	}
+	if matched != 1 {
+		t.Fatal(fmt.Errorf("expected matched == 1, got %d", matched))
 	}
 }
 
@@ -2390,7 +2385,7 @@ func TestAttestationDownloadWithBadPredicateType(t *testing.T) {
 	defer stop()
 	td := t.TempDir()
 
-	imgName := path.Join(repo, "cosign-attest-download-bad-type-new-bundle-e2e")
+	imgName := path.Join(repo, "cosign-attest-download-bad-type-e2e")
 	_, _, cleanup := mkimage(t, imgName)
 	defer cleanup()
 
@@ -2409,12 +2404,10 @@ func TestAttestationDownloadWithBadPredicateType(t *testing.T) {
 
 	regOpts := options.RegistryOptions{}
 	attestCommand := attest.AttestCommand{
-		KeyOpts:        ko,
-		PredicatePath:  slsaAttestationPath,
-		PredicateType:  "slsaprovenance",
-		Timeout:        30 * time.Second,
-		Replace:        true,
-		RekorEntryType: "dsse",
+		KeyOpts:       ko,
+		PredicatePath: slsaAttestationPath,
+		PredicateType: "slsaprovenance",
+		Timeout:       30 * time.Second,
 	}
 	must(attestCommand.Exec(ctx, imgName), t)
 
@@ -2422,150 +2415,6 @@ func TestAttestationDownloadWithBadPredicateType(t *testing.T) {
 		PredicateType: "vuln",
 	}
 	mustErr(download.AttestationCmd(ctx, regOpts, attOpts, imgName, os.Stdout), t)
-}
-
-func TestAttestationReplaceCreate(t *testing.T) {
-	repo, stop := reg(t)
-	defer stop()
-	td := t.TempDir()
-
-	imgName := path.Join(repo, "cosign-attest-replace-e2e")
-
-	_, _, cleanup := mkimage(t, imgName)
-	defer cleanup()
-
-	_, privKeyPath, _ := keypair(t, td)
-	ko := options.KeyOpts{KeyRef: privKeyPath, PassFunc: passFunc}
-
-	ctx := context.Background()
-
-	slsaAttestation := `{ "buildType": "x", "builder": { "id": "2" }, "recipe": {} }`
-	slsaAttestationPath := filepath.Join(td, "attestation.slsa.json")
-	if err := os.WriteFile(slsaAttestationPath, []byte(slsaAttestation), 0o600); err != nil {
-		t.Fatal(err)
-	}
-
-	ref, err := name.ParseReference(imgName)
-	if err != nil {
-		t.Fatal(err)
-	}
-	regOpts := options.RegistryOptions{}
-	ociremoteOpts, err := regOpts.ClientOpts(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Attest with replace=true to create an attestation
-	attestCommand := attest.AttestCommand{
-		KeyOpts:        ko,
-		PredicatePath:  slsaAttestationPath,
-		PredicateType:  "slsaprovenance",
-		Timeout:        30 * time.Second,
-		Replace:        true,
-		RekorEntryType: "dsse",
-	}
-	must(attestCommand.Exec(ctx, imgName), t)
-
-	// Download and count the attestations
-	attOpts := options.AttestationDownloadOptions{}
-	attestations, err := cosign.FetchAttestationsForReference(ctx, ref, attOpts.PredicateType, ociremoteOpts...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(attestations) != 1 {
-		t.Fatal(fmt.Errorf("expected len(attestations) == 1, got %d", len(attestations)))
-	}
-}
-
-func TestAttestationReplace(t *testing.T) {
-	repo, stop := reg(t)
-	defer stop()
-	td := t.TempDir()
-
-	imgName := path.Join(repo, "cosign-attest-replace-e2e")
-
-	_, _, cleanup := mkimage(t, imgName)
-	defer cleanup()
-
-	_, privKeyPath, _ := keypair(t, td)
-	ko := options.KeyOpts{KeyRef: privKeyPath, PassFunc: passFunc}
-
-	ctx := context.Background()
-
-	slsaAttestation := `{ "buildType": "x", "builder": { "id": "2" }, "recipe": {} }`
-	slsaAttestationPath := filepath.Join(td, "attestation.slsa.json")
-	if err := os.WriteFile(slsaAttestationPath, []byte(slsaAttestation), 0o600); err != nil {
-		t.Fatal(err)
-	}
-
-	ref, err := name.ParseReference(imgName)
-	if err != nil {
-		t.Fatal(err)
-	}
-	regOpts := options.RegistryOptions{}
-	ociremoteOpts, err := regOpts.ClientOpts(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// Attest once with replace=false creating an attestation
-	attestCommand := attest.AttestCommand{
-		KeyOpts:        ko,
-		PredicatePath:  slsaAttestationPath,
-		PredicateType:  "slsaprovenance",
-		Timeout:        30 * time.Second,
-		RekorEntryType: "dsse",
-	}
-	must(attestCommand.Exec(ctx, imgName), t)
-
-	// Download and count the attestations
-	attOpts := options.AttestationDownloadOptions{}
-	attestations, err := cosign.FetchAttestationsForReference(ctx, ref, attOpts.PredicateType, ociremoteOpts...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(attestations) != 1 {
-		t.Fatal(fmt.Errorf("expected len(attestations) == 1, got %d", len(attestations)))
-	}
-
-	// Attest again with replace=true, replacing the previous attestation
-	attestCommand = attest.AttestCommand{
-		KeyOpts:        ko,
-		PredicatePath:  slsaAttestationPath,
-		PredicateType:  "slsaprovenance",
-		Replace:        true,
-		Timeout:        30 * time.Second,
-		RekorEntryType: "dsse",
-	}
-	must(attestCommand.Exec(ctx, imgName), t)
-	attestations, err = cosign.FetchAttestationsForReference(ctx, ref, attOpts.PredicateType, ociremoteOpts...)
-	// Download and count the attestations
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(attestations) != 1 {
-		t.Fatal(fmt.Errorf("expected len(attestations) == 1, got %d", len(attestations)))
-	}
-
-	// Attest once more replace=true using a different predicate, to ensure it adds a new attestation
-	attestCommand = attest.AttestCommand{
-		KeyOpts:        ko,
-		PredicatePath:  slsaAttestationPath,
-		PredicateType:  "custom",
-		Replace:        true,
-		Timeout:        30 * time.Second,
-		RekorEntryType: "dsse",
-	}
-	must(attestCommand.Exec(ctx, imgName), t)
-
-	// Download and count the attestations
-	attestations, err = cosign.FetchAttestationsForReference(ctx, ref, attOpts.PredicateType, ociremoteOpts...)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(attestations) != 2 {
-		t.Fatal(fmt.Errorf("expected len(attestations) == 2, got %d", len(attestations)))
-	}
 }
 
 func TestAttestationRFC3161Timestamp(t *testing.T) {
@@ -2581,6 +2430,16 @@ func TestAttestationRFC3161Timestamp(t *testing.T) {
 	_, privKeyPath, pubKeyPath := keypair(t, td)
 
 	ctx := context.Background()
+
+	signingConfigPath := prepareSigningConfig(t, fulcioURL, rekorURL, "unused", tsaURL+"/api/v1/timestamp")
+	trustedRootPath := prepareTrustedRoot(t, tsaURL)
+	ko := options.KeyOpts{
+		KeyRef:           privKeyPath,
+		PassFunc:         passFunc,
+		SkipConfirmation: true,
+	}
+	err := signcommon.LoadSigningConfigAndTrustedMaterial(ctx, &ko, false, signingConfigPath, trustedRootPath)
+	must(err, t)
 
 	slsaAttestation := `{ "buildType": "x", "builder": { "id": "2" }, "recipe": {} }`
 	slsaAttestationPath := filepath.Join(td, "attestation.slsa.json")
@@ -2600,16 +2459,10 @@ func TestAttestationRFC3161Timestamp(t *testing.T) {
 
 	// Attest with TSA and skipping tlog creating an attestation
 	attestCommand := attest.AttestCommand{
-		KeyOpts: options.KeyOpts{
-			SigningConfig:   rekorSigningConfig(),
-			KeyRef:          privKeyPath,
-			PassFunc:        passFunc,
-			NewBundleFormat: true,
-		},
-		PredicatePath:  slsaAttestationPath,
-		PredicateType:  "slsaprovenance",
-		Timeout:        30 * time.Second,
-		RekorEntryType: "dsse",
+		KeyOpts:       ko,
+		PredicatePath: slsaAttestationPath,
+		PredicateType: "slsaprovenance",
+		Timeout:       30 * time.Second,
 	}
 	must(attestCommand.Exec(ctx, imgName), t)
 
@@ -2624,13 +2477,13 @@ func TestAttestationRFC3161Timestamp(t *testing.T) {
 
 	verifyAttestation := cliverify.VerifyAttestationCommand{
 		CommonVerifyOptions: options.CommonVerifyOptions{
-			TrustedRootPath: prepareTrustedRoot(t, tsaURL),
-			NewBundleFormat: true,
+			TrustedRootPath: trustedRootPath,
 		},
-		KeyRef:        pubKeyPath,
-		IgnoreTlog:    true,
-		PredicateType: "slsaprovenance",
-		MaxWorkers:    10,
+		KeyRef:              pubKeyPath,
+		IgnoreTlog:          true,
+		UseSignedTimestamps: true,
+		PredicateType:       "slsaprovenance",
+		MaxWorkers:          10,
 	}
 
 	must(verifyAttestation.Exec(ctx, []string{imgName}), t)
@@ -3846,82 +3699,96 @@ func TestSaveLoadAttestation(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo, stop := reg(t)
-	defer stop()
-
-	imgName := path.Join(repo, "save-load")
-
-	_, _, cleanup := mkimage(t, imgName)
-	defer cleanup()
-
-	_, privKeyPath, pubKeyPath := keypair(t, td)
-
-	ctx := context.Background()
-	// Now sign the image and verify it
-	ko := options.KeyOpts{
-		SigningConfig:    rekorSigningConfig(),
-		KeyRef:           privKeyPath,
-		PassFunc:         passFunc,
-		SkipConfirmation: true,
-	}
-	so := options.SignOptions{
-		Upload: true,
-	}
-	must(sign.SignCmd(ctx, ro, ko, so, []string{imgName}), t)
-	must(verify(pubKeyPath, imgName, true, nil, false), t)
-
-	// now, append an attestation to the image
-	slsaAttestation := `{ "buildType": "x", "builder": { "id": "2" }, "recipe": {} }`
-	slsaAttestationPath := filepath.Join(td, "attestation.slsa.json")
-	if err := os.WriteFile(slsaAttestationPath, []byte(slsaAttestation), 0o600); err != nil {
-		t.Fatal(err)
-	}
-
-	// Now attest the image
-	ko = options.KeyOpts{
-		SigningConfig:   rekorSigningConfig(),
-		KeyRef:          privKeyPath,
-		PassFunc:        passFunc,
-		NewBundleFormat: true,
-	}
-	attestCommand := attest.AttestCommand{
-		KeyOpts:        ko,
-		PredicatePath:  slsaAttestationPath,
-		PredicateType:  "slsaprovenance",
-		Timeout:        30 * time.Second,
-		RekorEntryType: "dsse",
-	}
-	must(attestCommand.Exec(ctx, imgName), t)
-
-	// save the image to a temp dir
-	imageDir := t.TempDir()
-	must(cli.SaveCmd(ctx, options.SaveOptions{Directory: imageDir}, imgName), t)
-
-	// load the image from the temp dir into a new image and verify the new image
-	imgName2 := path.Join(repo, "save-load-2")
-	must(cli.LoadCmd(ctx, options.LoadOptions{Directory: imageDir}, imgName2), t)
-	must(verify(pubKeyPath, imgName2, true, nil, false), t)
-	// Use cue to verify attestation on the new image
-	policyPath := filepath.Join(td, "policy.cue")
-	verifyAttestation := cliverify.VerifyAttestationCommand{
-		CommonVerifyOptions: options.CommonVerifyOptions{
-			NewBundleFormat: true,
+	tests := []struct {
+		description     string
+		getSignedEntity func(t *testing.T, n string) (name.Reference, *remote.Descriptor, func())
+	}{
+		{
+			description:     "save and load an image with attestation",
+			getSignedEntity: mkimage,
 		},
-		KeyRef:     pubKeyPath,
-		IgnoreTlog: true,
-		MaxWorkers: 10,
+		{
+			description:     "save and load an image index with attestation",
+			getSignedEntity: mkimageindex,
+		},
 	}
-	verifyAttestation.PredicateType = "slsaprovenance"
-	verifyAttestation.Policies = []string{policyPath}
-	// Success case (remote)
-	cuePolicy := `predicate: builder: id: "2"`
-	if err := os.WriteFile(policyPath, []byte(cuePolicy), 0o600); err != nil {
-		t.Fatal(err)
+
+	for i, test := range tests {
+		t.Run(test.description, func(t *testing.T) {
+			repo, stop := reg(t)
+			defer stop()
+
+			imgName := path.Join(repo, fmt.Sprintf("save-load-att-%d", i))
+
+			_, _, cleanup := test.getSignedEntity(t, imgName)
+			defer cleanup()
+
+			keysDir := t.TempDir()
+			_, privKeyPath, pubKeyPath := keypair(t, keysDir)
+
+			ctx := context.Background()
+			// Now sign the image and verify it
+			ko := options.KeyOpts{
+				SigningConfig:    rekorSigningConfig(),
+				KeyRef:           privKeyPath,
+				PassFunc:         passFunc,
+				SkipConfirmation: true,
+			}
+			so := options.SignOptions{
+				Upload: true,
+			}
+			must(sign.SignCmd(ctx, ro, ko, so, []string{imgName}), t)
+			must(verify(pubKeyPath, imgName, true, nil, false), t)
+
+			// now, append an attestation to the image
+			slsaAttestation := `{ "buildType": "x", "builder": { "id": "2" }, "recipe": {} }`
+			slsaAttestationPath := filepath.Join(keysDir, "attestation.slsa.json")
+			if err := os.WriteFile(slsaAttestationPath, []byte(slsaAttestation), 0o600); err != nil {
+				t.Fatal(err)
+			}
+
+			// Now attest the image
+			ko = options.KeyOpts{
+				SigningConfig: rekorSigningConfig(),
+				KeyRef:        privKeyPath,
+				PassFunc:      passFunc,
+			}
+			attestCommand := attest.AttestCommand{
+				KeyOpts:       ko,
+				PredicatePath: slsaAttestationPath,
+				PredicateType: "slsaprovenance",
+				Timeout:       30 * time.Second,
+			}
+			must(attestCommand.Exec(ctx, imgName), t)
+
+			// save the image to a temp dir
+			imageDir := t.TempDir()
+			must(cli.SaveCmd(ctx, options.SaveOptions{Directory: imageDir}, imgName), t)
+
+			// load the image from the temp dir into a new image and verify the new image
+			imgName2 := path.Join(repo, fmt.Sprintf("save-load-att-%d-2", i))
+			must(cli.LoadCmd(ctx, options.LoadOptions{Directory: imageDir}, imgName2), t)
+			must(verify(pubKeyPath, imgName2, true, nil, false), t)
+			// Use cue to verify attestation on the new image
+			policyPath := filepath.Join(keysDir, "policy.cue")
+			verifyAttestation := cliverify.VerifyAttestationCommand{
+				KeyRef:     pubKeyPath,
+				IgnoreTlog: true,
+				MaxWorkers: 10,
+			}
+			verifyAttestation.PredicateType = "slsaprovenance"
+			verifyAttestation.Policies = []string{policyPath}
+			// Success case (remote)
+			cuePolicy := `predicate: builder: id: "2"`
+			if err := os.WriteFile(policyPath, []byte(cuePolicy), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			must(verifyAttestation.Exec(ctx, []string{imgName2}), t)
+			// Success case (local)
+			verifyAttestation.LocalImage = true
+			must(verifyAttestation.Exec(ctx, []string{imageDir}), t)
+		})
 	}
-	must(verifyAttestation.Exec(ctx, []string{imgName2}), t)
-	// Success case (local)
-	verifyAttestation.LocalImage = true
-	must(verifyAttestation.Exec(ctx, []string{imageDir}), t)
 }
 
 func TestAttestDownloadAttachNewBundle(t *testing.T) {
@@ -3957,9 +3824,8 @@ func TestAttestDownloadAttachNewBundle(t *testing.T) {
 			PassFunc:        passFunc,
 			NewBundleFormat: true,
 		},
-		PredicatePath:  slsaAttestationPath,
-		PredicateType:  "slsaprovenance",
-		RekorEntryType: "dsse",
+		PredicatePath: slsaAttestationPath,
+		PredicateType: "slsaprovenance",
 	}
 
 	must(attestCommand.Exec(ctx, imgName), t)
@@ -5024,11 +4890,10 @@ func TestAttestVerifyUploadFalse(t *testing.T) {
 		t.Fatal(err)
 	}
 	attestCmd := attest.AttestCommand{
-		KeyOpts:        ko,
-		PredicatePath:  predicatePath,
-		PredicateType:  "slsaprovenance",
-		RekorEntryType: "dsse",
-		NoUpload:       true,
+		KeyOpts:       ko,
+		PredicatePath: predicatePath,
+		PredicateType: "slsaprovenance",
+		NoUpload:      true,
 	}
 	must(attestCmd.Exec(ctx, imgName), t)
 
